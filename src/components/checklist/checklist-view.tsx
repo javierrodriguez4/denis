@@ -1,136 +1,197 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
 import { Card, CardTitle } from "@/components/ui/card";
+import { LerBadge } from "@/components/ui/ler-badge";
+import { SectionLabel } from "@/components/ui/section-label";
 import { updateTopicProgress } from "@/lib/actions/checklist";
 import type { TopicWithSubject } from "@/lib/actions/checklist";
-import { cn } from "@/lib/utils";
 
-export function ChecklistView({ topics }: { topics: TopicWithSubject[] }) {
-  const router = useRouter();
-  const grouped = topics.reduce<Record<string, TopicWithSubject[]>>((acc, t) => {
-    const key = t.subject_id;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(t);
-    return acc;
-  }, {});
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  async function toggle(
-    topicId: string,
-    field: "read_done" | "studied_done" | "reviewed_done",
-    value: boolean,
-  ) {
-    await updateTopicProgress(topicId, field, value);
-    router.refresh();
-  }
+/** Derive the LER numeric value (0‒3) from the three boolean fields. */
+function lerValue(topic: TopicWithSubject): number {
+  return (topic.read_done ? 1 : 0) + (topic.studied_done ? 1 : 0) + (topic.reviewed_done ? 1 : 0);
+}
 
-  if (topics.length === 0) {
-    return (
-      <Card>
-        <p className="text-sm text-[var(--muted)]">
-          No hay temas todavía. Crea materias y agrega temas desde el programa curricular.
-        </p>
-      </Card>
-    );
-  }
+/**
+ * Translate a LER count (0‒3) back to the three individual boolean fields and
+ * call updateTopicProgress for each field that actually changed.
+ *
+ * LER model: stages are sequential — completing stage N implies stages 0..N-1
+ * are also complete.  The badge reports a new total count.
+ */
+async function applyLerChange(
+  topicId: string,
+  prev: TopicWithSubject,
+  next: number,
+) {
+  const desired = {
+    read_done: next >= 1,
+    studied_done: next >= 2,
+    reviewed_done: next >= 3,
+  } as const;
 
+  const calls: Promise<unknown>[] = [];
+
+  if (prev.read_done !== desired.read_done)
+    calls.push(updateTopicProgress(topicId, "read_done", desired.read_done));
+  if (prev.studied_done !== desired.studied_done)
+    calls.push(updateTopicProgress(topicId, "studied_done", desired.studied_done));
+  if (prev.reviewed_done !== desired.reviewed_done)
+    calls.push(updateTopicProgress(topicId, "reviewed_done", desired.reviewed_done));
+
+  await Promise.all(calls);
+}
+
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+
+function EmptyState() {
   return (
-    <div className="space-y-6">
-      {Object.entries(grouped).map(([subjectId, subjectTopics]) => {
-        const subject = subjectTopics[0].subjects;
-        const done = subjectTopics.filter(
-          (t) => t.read_done && t.studied_done && t.reviewed_done,
-        ).length;
-        const pct = Math.round((done / subjectTopics.length) * 100);
-
-        return (
-          <Card key={subjectId}>
-            <div className="mb-4 flex items-center gap-3">
-              <div
-                className="h-10 w-10 shrink-0 rounded-xl"
-                style={{ backgroundColor: subject.color }}
-              />
-              <div className="flex-1">
-                <CardTitle>{subject.name}</CardTitle>
-                <div className="mt-1 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--border)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--accent)]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-[var(--muted)]">{pct}%</span>
-                </div>
-              </div>
-            </div>
-
-            <ul className="space-y-2">
-              {subjectTopics.map((topic) => (
-                <li
-                  key={topic.id}
-                  className="rounded-xl border border-[var(--border)] p-3"
-                >
-                  <p className="mb-2 text-sm font-medium">{topic.title}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <CheckButton
-                      label="Leído"
-                      checked={topic.read_done}
-                      onChange={(v) => toggle(topic.id, "read_done", v)}
-                    />
-                    <CheckButton
-                      label="Estudiado"
-                      checked={topic.studied_done}
-                      onChange={(v) => toggle(topic.id, "studied_done", v)}
-                    />
-                    <CheckButton
-                      label="Resumido"
-                      checked={topic.reviewed_done}
-                      onChange={(v) => toggle(topic.id, "reviewed_done", v)}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        );
-      })}
-    </div>
+    <Card>
+      <p className="text-sm text-[var(--muted)]">
+        No hay temas todavía. Creá materias y agregá temas desde el programa curricular.
+      </p>
+    </Card>
   );
 }
 
-function CheckButton({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
+// ---------------------------------------------------------------------------
+// Subject group card
+// ---------------------------------------------------------------------------
+
+interface SubjectGroupProps {
+  subjectId: string;
+  topics: TopicWithSubject[];
+  onToggle: (topic: TopicWithSubject, next: number) => void;
+}
+
+function SubjectGroup({ subjectId: _subjectId, topics, onToggle }: SubjectGroupProps) {
+  const subject = topics[0].subjects;
+
+  const done = topics.filter((t) => t.read_done && t.studied_done && t.reviewed_done).length;
+  const pct = topics.length > 0 ? Math.round((done / topics.length) * 100) : 0;
+
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-colors",
-        checked
-          ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
-          : "border-[var(--border)] text-[var(--muted)] hover:bg-[var(--surface-hover)]",
-      )}
-    >
+    <Card className="p-0 overflow-hidden">
+      {/* Subject header */}
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4">
+        <div
+          className="h-9 w-9 shrink-0 rounded-xl"
+          style={{ backgroundColor: subject.color }}
+          aria-hidden="true"
+        />
+        <div className="flex-1 min-w-0">
+          <CardTitle>{subject.name}</CardTitle>
+          {/* Inline progress bar + pct */}
+          <div className="mt-1.5 flex items-center gap-2">
+            <div
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--soft)]"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Progreso de ${subject.name}: ${pct}%`}
+            >
+              <div
+                className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-300 motion-reduce:transition-none"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span
+              className="text-xs tabular-nums font-semibold font-[family-name:var(--font-display)] text-[var(--muted)] min-w-[2.5rem] text-right"
+              aria-hidden="true"
+            >
+              {pct}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Topic rows */}
+      <ul className="border-t border-[var(--soft)] divide-y divide-[var(--soft)]">
+        {topics.map((topic) => (
+          <TopicItem key={topic.id} topic={topic} onToggle={onToggle} />
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Single topic item
+// ---------------------------------------------------------------------------
+
+interface TopicItemProps {
+  topic: TopicWithSubject;
+  onToggle: (topic: TopicWithSubject, next: number) => void;
+}
+
+function TopicItem({ topic, onToggle }: TopicItemProps) {
+  const ler = lerValue(topic);
+
+  return (
+    <li className="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-[var(--accent-soft)]/30">
+      {/* Colored subject tick */}
       <span
-        className={cn(
-          "flex h-3.5 w-3.5 items-center justify-center rounded border",
-          checked
-            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-            : "border-[var(--border)]",
-        )}
-      >
-        {checked && <Check className="h-2.5 w-2.5" />}
+        aria-hidden="true"
+        className="w-1.5 flex-none self-stretch rounded-full bg-[var(--accent)]"
+        style={{
+          opacity: ler === 3 ? 1 : ler >= 1 ? 0.6 : 0.25,
+        }}
+      />
+
+      {/* Topic name */}
+      <span className="flex-1 min-w-0 truncate text-sm font-medium text-[var(--ink)]">
+        {topic.title}
       </span>
-      {label}
-    </button>
+
+      {/* Interactive LER badge — individual button aria-labels come from LerBadge itself */}
+      <LerBadge
+        value={ler}
+        onChange={(next) => onToggle(topic, next)}
+        size="sm"
+      />
+    </li>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+
+export function ChecklistView({ topics }: { topics: TopicWithSubject[] }) {
+  const router = useRouter();
+
+  if (topics.length === 0) return <EmptyState />;
+
+  // Group by subject, preserving the original sort order
+  const grouped = topics.reduce<Record<string, TopicWithSubject[]>>((acc, t) => {
+    if (!acc[t.subject_id]) acc[t.subject_id] = [];
+    acc[t.subject_id].push(t);
+    return acc;
+  }, {});
+
+  async function handleToggle(topic: TopicWithSubject, next: number) {
+    await applyLerChange(topic.id, topic, next);
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-5">
+      <SectionLabel>Temas por materia</SectionLabel>
+      {Object.entries(grouped).map(([subjectId, subjectTopics]) => (
+        <SubjectGroup
+          key={subjectId}
+          subjectId={subjectId}
+          topics={subjectTopics}
+          onToggle={handleToggle}
+        />
+      ))}
+    </div>
   );
 }

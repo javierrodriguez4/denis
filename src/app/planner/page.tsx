@@ -1,14 +1,14 @@
-import { MobileHeader } from "@/components/navigation";
 import { SetupBanner } from "@/components/setup-banner";
 import { WeeklyPlanner } from "@/components/planner/weekly-planner";
 import { getPlannerEntries } from "@/lib/actions/planner";
 import { getCalendarEvents } from "@/lib/actions/calendar";
-import { getWeekStart, getWeekEnd, toISODate } from "@/lib/dates";
+import { getWeekStart, getWeekEnd, toISODate, formatDate } from "@/lib/dates";
 import { addWeeks } from "date-fns";
 
 export default async function PlannerPage() {
-  const start = getWeekStart(new Date());
-  const end = addWeeks(getWeekEnd(new Date()), 2);
+  const today = new Date();
+  const start = getWeekStart(today);
+  const end = addWeeks(getWeekEnd(today), 2);
   const from = toISODate(start);
   const to = toISODate(end);
 
@@ -19,18 +19,23 @@ export default async function PlannerPage() {
 
   const presentations = allEvents.filter((e) => e.event_type === "presentacion");
 
+  // Eyebrow label: e.g. "Semana del 16 jun"
+  const eyebrow = `Semana del ${formatDate(start, "d MMM")}`;
+
   return (
-    <>
-      <MobileHeader title="Planner" />
-      <div className="hidden md:mb-6 md:block">
-        <h1 className="text-2xl font-semibold">Planner semanal</h1>
-        <p className="text-[var(--muted)]">
-          Temas de clase del día y presentaciones programadas
+    <div className="mx-auto w-full max-w-6xl">
+      {/* Page heading */}
+      <div className="mb-6 px-0.5">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+          {eyebrow}
         </p>
+        <h1 className="mt-1.5 font-[family-name:var(--font-display)] text-[27px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ink)] md:text-[32px]">
+          Planner semanal
+        </h1>
       </div>
 
       <SetupBanner />
       <WeeklyPlanner entries={entries} presentations={presentations} />
-    </>
+    </div>
   );
 }

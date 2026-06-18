@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MobileHeader } from "@/components/navigation";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Bell, Download, Check } from "lucide-react";
+import { Card, CardTitle, CardSection } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { updateReminderSettings } from "@/lib/actions/reminders";
 import { requestNotificationPermission } from "@/components/pwa/register-sw";
@@ -44,61 +44,150 @@ export default function AjustesPage() {
   }
 
   return (
-    <>
-      <MobileHeader title="Ajustes" />
-      <div className="hidden md:mb-6 md:block">
-        <h1 className="text-2xl font-semibold">Ajustes</h1>
-        <p className="text-[var(--muted)]">Recordatorios e instalación</p>
-      </div>
+    <div className="mx-auto w-full max-w-2xl">
+      {/* Page heading */}
+      <header className="mb-7 px-0.5">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+          Configuración
+        </p>
+        <h1 className="mt-1.5 font-[family-name:var(--font-display)] text-[27px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ink)] md:text-[32px]">
+          Ajustes
+        </h1>
+      </header>
 
       <div className="space-y-4">
+        {/* Reminders card */}
         <Card>
-          <CardTitle>Recordatorios</CardTitle>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Recibe avisos antes de exámenes y presentaciones.
-          </p>
-          <div className="mt-4 space-y-2">
-            {PRESETS.map((p) => (
-              <Button
-                key={p.label}
-                variant={
-                  JSON.stringify(settings?.days_before) === JSON.stringify(p.value)
-                    ? "primary"
-                    : "secondary"
-                }
-                className="w-full justify-start"
-                disabled={loading}
-                onClick={() => save(p.value, settings?.notifications_enabled ?? true)}
+          <CardSection>
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)]"
+                aria-hidden="true"
               >
-                {p.label}
+                <Bell className="h-4 w-4 text-[var(--accent)]" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <CardTitle>Recordatorios</CardTitle>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Recibe avisos antes de exámenes y presentaciones.
+                </p>
+              </div>
+            </div>
+
+            <fieldset className="mt-5 border-0 p-0" disabled={loading}>
+              <legend className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                Cuándo avisarte
+              </legend>
+              {/* Chip group — wraps on narrow screens */}
+              <div
+                className="flex flex-wrap gap-2"
+                role="radiogroup"
+                aria-label="Días de anticipación"
+              >
+                {PRESETS.map((p) => {
+                  const active =
+                    JSON.stringify(settings?.days_before) === JSON.stringify(p.value);
+                  return (
+                    <button
+                      key={p.label}
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() =>
+                        save(p.value, settings?.notifications_enabled ?? true)
+                      }
+                      disabled={loading}
+                      className={[
+                        // base chip
+                        "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors outline-none",
+                        "focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]",
+                        "disabled:opacity-50 cursor-pointer",
+                        // selected vs idle
+                        active
+                          ? "bg-[var(--accent)] text-white shadow-sm"
+                          : "border border-[var(--soft)] bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--accent-soft)] hover:border-[var(--accent)]",
+                      ].join(" ")}
+                    >
+                      {active && (
+                        <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      )}
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          </CardSection>
+        </Card>
+
+        {/* Browser notifications card */}
+        <Card>
+          <CardSection>
+            <CardTitle>Notificaciones del navegador</CardTitle>
+            <p className="mt-1.5 text-sm text-[var(--muted)]">
+              Para recibir avisos en el celular, instala Denis desde el
+              navegador (Agregar a pantalla de inicio) y activa las
+              notificaciones.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={enableNotifications}
+                aria-label="Activar notificaciones del navegador"
+              >
+                <Bell className="h-4 w-4" aria-hidden="true" />
+                Activar notificaciones
               </Button>
-            ))}
-          </div>
+              {notifStatus && (
+                <p
+                  className="text-sm text-[var(--muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {notifStatus}
+                </p>
+              )}
+            </div>
+          </CardSection>
         </Card>
 
+        {/* Install PWA card */}
         <Card>
-          <CardTitle>Notificaciones del navegador</CardTitle>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Para recibir avisos en el celular, instala Denis desde el navegador
-            (Agregar a pantalla de inicio) y activa las notificaciones.
-          </p>
-          <Button className="mt-4" onClick={enableNotifications}>
-            Activar notificaciones
-          </Button>
-          {notifStatus && (
-            <p className="mt-2 text-sm text-[var(--muted)]">{notifStatus}</p>
-          )}
-        </Card>
-
-        <Card>
-          <CardTitle>Instalar en el celular</CardTitle>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-[var(--muted)]">
-            <li>Abre Denis en Chrome o Safari</li>
-            <li>Toca el menú (⋮ o compartir)</li>
-            <li>Elige &quot;Agregar a pantalla de inicio&quot; o &quot;Instalar app&quot;</li>
-          </ol>
+          <CardSection>
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)]"
+                aria-hidden="true"
+              >
+                <Download className="h-4 w-4 text-[var(--accent)]" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <CardTitle>Instalar en el celular</CardTitle>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Usá Denis como app nativa — sin abrir el navegador.
+                </p>
+              </div>
+            </div>
+            <ol className="mt-4 space-y-2 pl-1">
+              {[
+                "Abre Denis en Chrome o Safari",
+                "Toca el menú (⋮ o compartir)",
+                'Elige "Agregar a pantalla de inicio" o "Instalar app"',
+              ].map((step, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-[var(--muted)]">
+                  <span
+                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)]"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </CardSection>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

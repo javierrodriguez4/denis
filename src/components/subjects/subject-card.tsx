@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import type { Subject } from "@/lib/supabase/types";
 
 interface SubjectCardProps {
@@ -8,6 +6,10 @@ interface SubjectCardProps {
   progress?: { total: number; read: number; studied: number; reviewed: number };
 }
 
+/**
+ * SubjectCard — slim accent progress bar row used in the dashboard "Materias"
+ * section. Links to the subject detail page.
+ */
 export function SubjectCard({ subject, progress }: SubjectCardProps) {
   const pct =
     progress && progress.total > 0
@@ -19,32 +21,31 @@ export function SubjectCard({ subject, progress }: SubjectCardProps) {
       : 0;
 
   return (
-    <Link href={`/materias/${subject.id}`}>
-      <Card className="transition-shadow hover:shadow-md">
-        <div className="flex items-center gap-3">
-          <div
-            className="h-10 w-10 shrink-0 rounded-xl"
-            style={{ backgroundColor: subject.color }}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{subject.name}</p>
-            {progress && progress.total > 0 ? (
-              <div className="mt-1">
-                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--border)]">
-                  <div
-                    className="h-full rounded-full bg-[var(--accent)] transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-[var(--muted)]">{pct}% progreso</p>
-              </div>
-            ) : (
-              <p className="text-xs text-[var(--muted)]">Sin temas planificados</p>
-            )}
-          </div>
-          <ChevronRight className="h-4 w-4 text-[var(--muted)]" />
-        </div>
-      </Card>
+    <Link
+      href={`/materias/${subject.id}`}
+      className="group flex flex-col gap-2 outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+    >
+      <div className="flex items-baseline justify-between">
+        <span className="text-[14.5px] font-medium text-[var(--ink)] transition-colors group-hover:text-[var(--accent)]">
+          {subject.name}
+        </span>
+        <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold tabular-nums text-[var(--muted)]">
+          {pct}%
+        </span>
+      </div>
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-[var(--soft)]"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Progreso de ${subject.name}: ${pct}%`}
+      >
+        <div
+          className="h-full rounded-full bg-[var(--accent)] transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </Link>
   );
 }

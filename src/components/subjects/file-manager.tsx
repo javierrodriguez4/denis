@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, Trash2, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label, Select } from "@/components/ui/input";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle, CardSection } from "@/components/ui/card";
 import { FILE_TYPE_LABELS } from "@/lib/constants";
 import { createBrowserClient } from "@/lib/supabase/client";
 import {
@@ -25,6 +25,7 @@ export function FileManager({
   const [fileType, setFileType] = useState<FileType>("program");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -89,66 +90,98 @@ export function FileManager({
   return (
     <Card>
       <CardTitle>Archivos</CardTitle>
-      <div className="mt-4 space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <Label>Tipo de archivo</Label>
-            <Select
-              value={fileType}
-              onChange={(e) => setFileType(e.target.value as FileType)}
-            >
-              {Object.entries(FILE_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={loading}
-            />
-            <span className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white">
-              <Upload className="h-4 w-4" />
-              {loading ? "Subiendo..." : "Subir archivo"}
-            </span>
-          </label>
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <ul className="divide-y divide-[var(--border)]">
-          {files.length === 0 && (
-            <li className="py-4 text-sm text-[var(--muted)]">
-              Aún no hay archivos. Sube el programa, libros o presentaciones.
-            </li>
-          )}
-          {files.map((file) => (
-            <li key={file.id} className="flex items-center gap-3 py-3">
-              <FileText className="h-4 w-4 shrink-0 text-[var(--muted)]" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{file.name}</p>
-                <p className="text-xs text-[var(--muted)]">
-                  {FILE_TYPE_LABELS[file.file_type]}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleOpen(file.storage_path)}
+      {/* Upload section */}
+      <CardSection className="mt-4 space-y-3">
+        <div>
+          <Label htmlFor="file-type-select">Tipo de archivo</Label>
+          <Select
+            id="file-type-select"
+            value={fileType}
+            onChange={(e) => setFileType(e.target.value as FileType)}
+          >
+            {Object.entries(FILE_TYPE_LABELS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Hidden file input, triggered by the button */}
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg"
+          className="sr-only"
+          aria-label="Seleccionar archivo para subir"
+          onChange={handleUpload}
+          disabled={loading}
+        />
+        <Button
+          variant="secondary"
+          className="w-full"
+          disabled={loading}
+          onClick={() => inputRef.current?.click()}
+          aria-busy={loading}
+        >
+          <Upload className="h-4 w-4" aria-hidden="true" />
+          {loading ? "Subiendo…" : "Subir archivo"}
+        </Button>
+
+        {error && (
+          <p role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
+        )}
+      </CardSection>
+
+      {/* File list */}
+      <CardSection className="mt-4">
+        {files.length === 0 ? (
+          <p className="py-2 text-sm text-[var(--muted)]">
+            Aún no hay archivos. Sube el programa, libros o presentaciones.
+          </p>
+        ) : (
+          <ul role="list" className="divide-y divide-[var(--soft)]">
+            {files.map((file) => (
+              <li
+                key={file.id}
+                className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
               >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(file.id)}>
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </div>
+                <FileText
+                  className="h-4 w-4 shrink-0 text-[var(--muted)]"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[var(--ink)]">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-[var(--muted)]">
+                    {FILE_TYPE_LABELS[file.file_type]}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpen(file.storage_path)}
+                  aria-label={`Abrir ${file.name}`}
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(file.id)}
+                  aria-label={`Eliminar ${file.name}`}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardSection>
     </Card>
   );
 }

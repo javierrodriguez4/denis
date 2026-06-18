@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { MobileHeader } from "@/components/navigation";
 import { SetupBanner } from "@/components/setup-banner";
 import { FileManager } from "@/components/subjects/file-manager";
 import { TopicManager } from "@/components/subjects/topic-manager";
@@ -30,38 +29,49 @@ export default async function SubjectDetailPage({
   );
 
   return (
-    <>
-      <MobileHeader title={subject.name} />
+    <div className="mx-auto w-full max-w-3xl">
+      {/* Back link */}
       <Link
         href="/materias"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+        className="mb-6 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium text-[var(--muted)] outline-none transition-colors hover:text-[var(--ink)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Volver a materias
       </Link>
 
-      <div className="mb-6 hidden md:flex md:items-center md:gap-3">
+      {/* Page heading */}
+      <div className="mb-7 flex items-center gap-4">
         <div
-          className="h-12 w-12 rounded-2xl"
+          aria-hidden="true"
+          className="h-11 w-11 flex-none rounded-2xl shadow-sm"
           style={{ backgroundColor: subject.color }}
         />
         <div>
-          <h1 className="text-2xl font-semibold">{subject.name}</h1>
-          <p className="text-[var(--muted)]">{topics.length} temas · {files.length} archivos</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            Materia
+          </p>
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--ink)] md:text-3xl">
+            {subject.name}
+          </h1>
+          <p className="mt-0.5 text-sm text-[var(--muted)]">
+            {topics.length} {topics.length === 1 ? "tema" : "temas"} · {files.length}{" "}
+            {files.length === 1 ? "archivo" : "archivos"}
+          </p>
         </div>
       </div>
 
       <SetupBanner />
 
-      <div className="space-y-6">
-        <FileManager subjectId={id} files={files} />
+      {/* Two-column on md+, single column on mobile */}
+      <div className="space-y-6 md:grid md:grid-cols-[1fr_320px] md:gap-6 md:space-y-0 md:items-start">
         <TopicManager
           subjectId={id}
           topics={topics}
           programFiles={programFiles}
           nextExamDate={nextExam?.event_date}
         />
+        <FileManager subjectId={id} files={files} />
       </div>
-    </>
+    </div>
   );
 }

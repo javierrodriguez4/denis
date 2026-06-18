@@ -1,10 +1,10 @@
-import { MobileHeader } from "@/components/navigation";
 import { SetupBanner } from "@/components/setup-banner";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { getCalendarEvents } from "@/lib/actions/calendar";
 import { getStudyLogs } from "@/lib/actions/study-logs";
 import { getSubjects } from "@/lib/actions/subjects";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 export default async function CalendarioPage({
   searchParams,
@@ -25,23 +25,29 @@ export default async function CalendarioPage({
     getSubjects(),
   ]);
 
+  // Eyebrow: formatted day
+  const eyebrow = format(now, "EEEE d · MMMM", { locale: es });
+
   return (
-    <>
-      <MobileHeader title="Calendario" />
-      <div className="hidden md:mb-6 md:block">
-        <h1 className="text-2xl font-semibold">Calendario académico</h1>
-        <p className="text-[var(--muted)]">
-          Exámenes, presentaciones y tiempo de estudio diario
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-0 pb-6 md:px-0">
+      {/* Page heading — replaces MobileHeader */}
+      <div className="px-0.5">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)] capitalize">
+          {eyebrow}
         </p>
+        <h1 className="mt-1.5 font-[family-name:var(--font-display)] text-[27px] font-semibold leading-[1.15] tracking-tight text-[var(--ink)] md:text-[32px]">
+          Calendario
+        </h1>
       </div>
 
       <SetupBanner />
+
       <CalendarGrid
         events={events}
         studyLogs={studyLogs}
         subjects={subjects}
         month={month}
       />
-    </>
+    </div>
   );
 }

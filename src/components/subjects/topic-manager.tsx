@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Plus, Trash2, CalendarRange } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Input, Label } from "@/components/ui/input";
+import { Card, CardTitle, CardSection } from "@/components/ui/card";
+import { SectionLabel } from "@/components/ui/section-label";
 import {
   createTopic,
   createTopicsBatch,
@@ -89,111 +90,147 @@ export function TopicManager({
     <div className="space-y-4">
       <Card>
         <CardTitle>Temas de estudio</CardTitle>
-        <div className="mt-4 space-y-4">
-          {programFiles.length > 0 && (
-            <div className="rounded-xl border border-dashed border-[var(--border)] p-3">
-              <p className="mb-2 text-sm text-[var(--muted)]">
-                Extraer temas desde el programa (PDF):
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {programFiles.map((f) => (
+
+        {/* AI extraction from PDF */}
+        {programFiles.length > 0 && (
+          <CardSection className="mt-4">
+            <SectionLabel>Extraer temas con IA</SectionLabel>
+            <div className="flex flex-wrap gap-2">
+              {programFiles.map((f) => (
+                <Button
+                  key={f.id}
+                  variant="secondary"
+                  size="sm"
+                  disabled={loading}
+                  onClick={() => handleExtract(f.id)}
+                  aria-busy={loading}
+                >
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  {f.name}
+                </Button>
+              ))}
+            </div>
+          </CardSection>
+        )}
+
+        {/* Suggested topics review panel */}
+        {suggested && (
+          <CardSection className="mt-4">
+            <p className="mb-3 text-sm font-semibold text-[var(--ink)]">
+              Revisa los temas sugeridos
+            </p>
+            <ul
+              role="list"
+              className="mb-4 max-h-64 space-y-2 overflow-y-auto pr-1"
+              aria-label="Lista de temas sugeridos por IA"
+            >
+              {suggested.map((t, i) => (
+                <li key={i} className="flex gap-2">
+                  <Input
+                    aria-label={`Tema ${i + 1}`}
+                    value={t.title}
+                    onChange={(e) => {
+                      const next = [...suggested];
+                      next[i] = { ...t, title: e.target.value };
+                      setSuggested(next);
+                    }}
+                  />
                   <Button
-                    key={f.id}
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
-                    disabled={loading}
-                    onClick={() => handleExtract(f.id)}
+                    onClick={() => setSuggested(suggested.filter((_, j) => j !== i))}
+                    aria-label={`Eliminar tema sugerido ${i + 1}`}
                   >
-                    <Sparkles className="h-4 w-4" />
-                    {f.name}
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
-                ))}
-              </div>
+                </li>
+              ))}
+            </ul>
+            <div className="flex gap-2">
+              <Button onClick={confirmSuggested} disabled={loading} aria-busy={loading}>
+                Confirmar temas
+              </Button>
+              <Button variant="ghost" onClick={() => setSuggested(null)}>
+                Cancelar
+              </Button>
             </div>
-          )}
+          </CardSection>
+        )}
 
-          {suggested && (
-            <div className="rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 p-4">
-              <p className="mb-3 font-medium">Revisa los temas sugeridos</p>
-              <ul className="mb-4 max-h-60 space-y-2 overflow-y-auto">
-                {suggested.map((t, i) => (
-                  <li key={i} className="flex gap-2">
-                    <Input
-                      value={t.title}
-                      onChange={(e) => {
-                        const next = [...suggested];
-                        next[i] = { ...t, title: e.target.value };
-                        setSuggested(next);
-                      }}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        setSuggested(suggested.filter((_, j) => j !== i))
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-2">
-                <Button onClick={confirmSuggested} disabled={loading}>
-                  Confirmar temas
-                </Button>
-                <Button variant="ghost" onClick={() => setSuggested(null)}>
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleAddTopic} className="flex gap-2">
+        {/* Add topic manually */}
+        <CardSection className="mt-4">
+          <form
+            onSubmit={handleAddTopic}
+            className="flex gap-2"
+            aria-label="Agregar tema manualmente"
+          >
             <Input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Agregar tema manualmente"
+              aria-label="Nombre del nuevo tema"
             />
-            <Button type="submit" disabled={loading}>
-              <Plus className="h-4 w-4" />
+            <Button
+              type="submit"
+              disabled={loading || !newTitle.trim()}
+              aria-label="Agregar tema"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
             </Button>
           </form>
+        </CardSection>
 
-          {topics.length > 0 && (
-            <>
-              <ul className="divide-y divide-[var(--border)]">
-                {topics.map((t) => (
-                  <TopicRow key={t.id} topic={t} subjectId={subjectId} />
-                ))}
-              </ul>
+        {/* Topic list */}
+        {topics.length > 0 && (
+          <CardSection className="mt-4">
+            <SectionLabel>{topics.length} {topics.length === 1 ? "tema" : "temas"}</SectionLabel>
+            <ul role="list" className="space-y-1.5">
+              {topics.map((t) => (
+                <TopicRow key={t.id} topic={t} subjectId={subjectId} />
+              ))}
+            </ul>
+          </CardSection>
+        )}
 
-              <div className="rounded-xl border border-[var(--border)] p-3">
-                <p className="mb-2 text-sm font-medium">Distribuir en el planner</p>
-                <p className="mb-3 text-xs text-[var(--muted)]">
-                  Reparte los temas equitativamente hasta la fecha del examen.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={handleDistribute}
-                    disabled={loading}
-                  >
-                    <CalendarRange className="h-4 w-4" />
-                    Distribuir automáticamente
-                  </Button>
-                </div>
+        {/* Distribute to planner — only when there are topics */}
+        {topics.length > 0 && (
+          <CardSection className="mt-4">
+            <p className="mb-0.5 text-sm font-semibold text-[var(--ink)]">
+              Distribuir en el planner
+            </p>
+            <p className="mb-3 text-xs text-[var(--muted)]">
+              Reparte los temas equitativamente hasta la fecha del examen.
+            </p>
+            <div className="space-y-2">
+              <div>
+                <Label htmlFor="exam-date">Fecha del examen</Label>
+                <Input
+                  id="exam-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  aria-required="true"
+                />
               </div>
-            </>
-          )}
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={handleDistribute}
+                disabled={loading}
+                aria-busy={loading}
+              >
+                <CalendarRange className="h-4 w-4" aria-hidden="true" />
+                Distribuir automáticamente
+              </Button>
+            </div>
+          </CardSection>
+        )}
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-        </div>
+        {error && (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
       </Card>
     </div>
   );
@@ -204,10 +241,18 @@ function TopicRow({ topic, subjectId }: { topic: Topic; subjectId: string }) {
   const router = useRouter();
 
   return (
-    <li className="flex items-center gap-2 py-2">
-      <span className="w-6 text-xs text-[var(--muted)]">{topic.sort_order + 1}</span>
+    <li className="flex items-center gap-2 rounded-xl border border-[var(--soft)] bg-[var(--surface)] px-3 py-2 transition-colors hover:border-[#d3e0dc]">
+      {/* Sort order badge */}
+      <span
+        aria-hidden="true"
+        className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[var(--accent-soft)] text-[10px] font-semibold text-[var(--accent)]"
+      >
+        {topic.sort_order + 1}
+      </span>
       <Input
+        className="border-transparent bg-transparent px-1 focus-visible:border-[var(--accent)] focus-visible:bg-[var(--surface)]"
         value={title}
+        aria-label={`Nombre del tema ${topic.sort_order + 1}`}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => {
           if (title !== topic.title) updateTopic(topic.id, subjectId, title);
@@ -220,8 +265,9 @@ function TopicRow({ topic, subjectId }: { topic: Topic; subjectId: string }) {
           await deleteTopic(topic.id, subjectId);
           router.refresh();
         }}
+        aria-label={`Eliminar tema "${title}"`}
       >
-        <Trash2 className="h-4 w-4 text-red-500" />
+        <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />
       </Button>
     </li>
   );

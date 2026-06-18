@@ -27,20 +27,33 @@ export function ReminderBanner() {
   if (!events.length) return null;
 
   return (
-    <Card className="mb-6 border-[var(--accent)]/30 bg-[var(--accent)]/5">
+    <Card
+      className="mb-6 border-[var(--accent)]/20 bg-[var(--accent-soft)]"
+      role="region"
+      aria-label="Recordatorios próximos"
+    >
       <div className="flex items-start gap-3">
-        <Bell className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
-        <div className="space-y-2">
-          <p className="font-medium">Recordatorios</p>
-          {events.map((e) => (
-            <p key={e.id} className="text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--foreground)]">{e.title}</span>
-              {" — "}
-              {EVENT_TYPE_LABELS[e.event_type as EventType] ?? e.event_type}
-              {" en "}
-              {e.daysUntil === 0 ? "hoy" : `${e.daysUntil} día${e.daysUntil > 1 ? "s" : ""}`}
-            </p>
-          ))}
+        <span
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/60"
+          aria-hidden="true"
+        >
+          <Bell className="h-4 w-4 text-[var(--accent)]" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-[var(--ink)]">Recordatorios</p>
+          <ul className="mt-1.5 space-y-1" aria-label="Eventos próximos">
+            {events.map((e) => (
+              <li key={e.id} className="text-sm text-[var(--muted)]">
+                <span className="font-medium text-[var(--ink)]">{e.title}</span>
+                {" — "}
+                {EVENT_TYPE_LABELS[e.event_type as EventType] ?? e.event_type}
+                {" en "}
+                {e.daysUntil === 0
+                  ? "hoy"
+                  : `${e.daysUntil} día${e.daysUntil > 1 ? "s" : ""}`}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </Card>
