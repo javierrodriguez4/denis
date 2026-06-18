@@ -1,18 +1,13 @@
 import { cn } from "@/lib/utils";
 
+const fieldBase =
+  "w-full rounded-xl border border-[var(--soft)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--ink)] outline-none transition-colors placeholder:text-[var(--muted)] focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/25";
+
 export function Input({
   className,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={cn(
-        "w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <input className={cn(fieldBase, className)} {...props} />;
 }
 
 export function Select({
@@ -21,13 +16,7 @@ export function Select({
   ...props
 }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select
-      className={cn(
-        "w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]",
-        className,
-      )}
-      {...props}
-    >
+    <select className={cn(fieldBase, className)} {...props}>
       {children}
     </select>
   );
@@ -37,15 +26,7 @@ export function Textarea({
   className,
   ...props
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      className={cn(
-        "w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <textarea className={cn(fieldBase, className)} {...props} />;
 }
 
 export function Label({

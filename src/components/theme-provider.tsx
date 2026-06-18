@@ -1,7 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+
+interface ThemeContextValue {
+  dark: boolean;
+  toggle: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return ctx;
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [dark, setDark] = useState(false);
@@ -22,16 +37,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <>
-      {children}
-      <button
-        type="button"
-        onClick={toggle}
-        className="fixed bottom-20 right-4 z-50 flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg md:bottom-6"
-        aria-label="Cambiar tema"
-      >
-        {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </button>
-    </>
+    <ThemeContext.Provider value={{ dark, toggle }}>{children}</ThemeContext.Provider>
+  );
+}
+
+/**
+ * ThemeToggle — a self-contained light/dark switch. Render it anywhere inside
+ * the ThemeProvider (e.g. via the SideNav `renderToggle` slot).
+ */
+export function ThemeToggle({ className }: { className?: string }) {
+  const { dark, toggle } = useTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label="Cambiar tema"
+      aria-pressed={dark}
+      className={
+        className ??
+        "flex w-full items-center gap-3 rounded-xl border border-[var(--soft)] bg-[var(--surface)] px-3 py-2.5 text-[14.5px] font-medium text-[var(--muted)] outline-none transition-colors hover:bg-[var(--bg)] hover:text-[var(--ink)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      }
+    >
+      {dark ? (
+        <Sun className="h-5 w-5 flex-none" strokeWidth={1.7} />
+      ) : (
+        <Moon className="h-5 w-5 flex-none" strokeWidth={1.7} />
+      )}
+      {dark ? "Modo claro" : "Modo oscuro"}
+    </button>
   );
 }

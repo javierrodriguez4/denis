@@ -1,40 +1,71 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7f4;
-  --foreground: #1a2e2e;
+  /* Clínica serena palette (light) */
+  --bg: #fbfcfc;
   --surface: #ffffff;
-  --surface-hover: #f0efec;
-  --border: #e2e0da;
-  --muted: #6b7280;
-  --accent: #2d6a6a;
-  --accent-hover: #245656;
+  --ink: #14201e;
+  --accent: #2f7e72;
+  --accent-soft: #eaf3f1;
+  --soft: #e6edeb;
+  --muted: #5c6b67;
+  --accent-hover: #266a60;
+
+  /* Backward-compat aliases (old token names map onto the new palette) */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --border: var(--soft);
+  --surface-hover: var(--soft);
+
+  /* Radii */
+  --radius: 18px;
+  --radius-sm: 12px;
 }
 
 .dark {
-  --background: #141918;
-  --foreground: #e8ebe9;
-  --surface: #1c2221;
-  --surface-hover: #252b2a;
-  --border: #2f3836;
-  --muted: #9ca3af;
-  --accent: #4a9e9e;
-  --accent-hover: #3d8585;
+  /* Clínica serena palette (dark) */
+  --bg: #101615;
+  --surface: #18211f;
+  --ink: #e8efec;
+  --accent: #57b3a4;
+  --accent-soft: #1d2c29;
+  --soft: #28332f;
+  --muted: #8fa39d;
+  --accent-hover: #6cc3b4;
+
+  /* Backward-compat aliases */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --border: var(--soft);
+  --surface-hover: var(--soft);
 }
 
 @theme inline {
+  /* New semantic colors */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-soft: var(--soft);
+  --color-muted: var(--muted);
+
+  /* Backward-compat color mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
+
+  /* Fonts */
+  --font-display: var(--font-display), system-ui, sans-serif;
+  --font-sans: var(--font-body), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
 code {
-  font-family: var(--font-mono), monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
