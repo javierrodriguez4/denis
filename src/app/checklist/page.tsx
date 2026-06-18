@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { SetupBanner } from "@/components/setup-banner";
 import { ChecklistView } from "@/components/checklist/checklist-view";
 import { getAllTopicsWithProgress } from "@/lib/actions/checklist";

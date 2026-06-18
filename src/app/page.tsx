@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Card } from "@/components/ui/card";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { SectionLabel } from "@/components/ui/section-label";

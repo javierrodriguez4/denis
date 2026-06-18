@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { SetupBanner } from "@/components/setup-banner";
 import { WeeklyPlanner } from "@/components/planner/weekly-planner";
 import { getPlannerEntries } from "@/lib/actions/planner";

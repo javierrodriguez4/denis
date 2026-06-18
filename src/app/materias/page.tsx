@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { SetupBanner } from "@/components/setup-banner";
 import { Card, CardTitle } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
