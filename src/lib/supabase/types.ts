@@ -1,5 +1,11 @@
 export type FileType = "program" | "book" | "presentation" | "other";
-export type EventType = "parcial" | "final" | "presentacion" | "otro";
+export type EventType =
+  | "parcial"
+  | "final"
+  | "presentacion"
+  | "otro"
+  | "seminario"
+  | "recuperatorio";
 
 export interface Subject {
   id: string;

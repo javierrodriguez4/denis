@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Plus, Trash2, CalendarRange } from "lucide-react";
+import { Sparkles, Plus, Trash2, CalendarRange, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Select } from "@/components/ui/input";
 import { Card, CardTitle, CardSection } from "@/components/ui/card";
 import { SectionLabel } from "@/components/ui/section-label";
 import {
@@ -14,6 +14,11 @@ import {
   updateTopic,
 } from "@/lib/actions/topics";
 import { distributeTopicsToPlanner } from "@/lib/actions/planner";
+import {
+  processProgramFile,
+  generateScheduleFromProgram,
+} from "@/lib/actions/program";
+import type { ProgramData } from "@/lib/ai/program-schema";
 import type { SubjectFile, Topic } from "@/lib/supabase/types";
 import type { SuggestedTopic } from "@/lib/supabase/types";
 
@@ -34,7 +39,17 @@ export function TopicManager({
   const [suggested, setSuggested] = useState<SuggestedTopic[] | null>(null);
   const [sourceFileId, setSourceFileId] = useState<string | null>(null);
   const [endDate, setEndDate] = useState(nextExamDate ?? "");
+
+  // Program wizard state.
+  const [program, setProgram] = useState<ProgramData | null>(null);
+  const [programFileId, setProgramFileId] = useState<string | null>(null);
+  const [comisionNumero, setComisionNumero] = useState<number | null>(null);
+  const [programSuccess, setProgramSuccess] = useState("");
+
   const router = useRouter();
+
+  // Only true program files drive the wizard; the flat extractor handles any PDF.
+  const wizardFiles = programFiles.filter((f) => f.file_type === "program");
 
   async function handleAddTopic(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +89,47 @@ export function TopicManager({
     router.refresh();
   }
 
+  async function handleProcessProgram(fileId: string) {
+    setLoading(true);
+    setError("");
+    setProgramSuccess("");
+    setProgram(null);
+    setComisionNumero(null);
+    const result = await processProgramFile(fileId);
+    setLoading(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setProgram(result.program);
+    setProgramFileId(fileId);
+    setComisionNumero(result.program.comisiones[0]?.numero ?? null);
+  }
+
+  async function handleGenerateSchedule() {
+    if (!program || !programFileId || comisionNumero == null) return;
+    setLoading(true);
+    setError("");
+    const result = await generateScheduleFromProgram(
+      subjectId,
+      programFileId,
+      program,
+      comisionNumero,
+    );
+    setLoading(false);
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setProgramSuccess(
+      `Listo: ${result.topics} temas, ${result.events} eventos y ${result.plannerEntries} clases en tu planner.`,
+    );
+    setProgram(null);
+    setProgramFileId(null);
+    setComisionNumero(null);
+    router.refresh();
+  }
+
   async function handleDistribute() {
     if (!endDate) {
       setError("Indica la fecha del examen");
@@ -90,6 +146,82 @@ export function TopicManager({
     <div className="space-y-4">
       <Card>
         <CardTitle>Temas de estudio</CardTitle>
+
+        {/* Program wizard: parse a PROGRAM PDF and generate the full schedule */}
+        {wizardFiles.length > 0 && (
+          <CardSection className="mt-4">
+            <SectionLabel>Generar planner desde el programa</SectionLabel>
+            <p className="mb-3 text-xs text-[var(--muted)]">
+              Procesá el programa de la materia para generar automáticamente tus
+              seminarios, parciales y planner del cuatrimestre.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {wizardFiles.map((f) => (
+                <Button
+                  key={f.id}
+                  variant="secondary"
+                  size="sm"
+                  disabled={loading}
+                  onClick={() => handleProcessProgram(f.id)}
+                  aria-busy={loading}
+                >
+                  <Wand2 className="h-4 w-4" aria-hidden="true" />
+                  Procesar programa con IA
+                </Button>
+              ))}
+            </div>
+
+            {program && (
+              <div className="mt-4 space-y-3 rounded-xl border border-[var(--soft)] bg-[var(--surface)] p-4">
+                <p className="text-sm text-[var(--ink)]">
+                  Materia detectada:{" "}
+                  <span className="font-semibold">{program.materia}</span>
+                  {program.cuatrimestre ? ` — ${program.cuatrimestre}` : ""}
+                </p>
+
+                {program.comisiones.length > 0 ? (
+                  <div>
+                    <Label htmlFor="comision-select">¿Qué comisión sos?</Label>
+                    <Select
+                      id="comision-select"
+                      value={comisionNumero ?? ""}
+                      onChange={(e) => setComisionNumero(Number(e.target.value))}
+                    >
+                      {program.comisiones.map((c) => (
+                        <option key={c.numero} value={c.numero}>
+                          {`Comisión ${c.numero} — ${c.dia_semana} ${c.hora_inicio} a ${c.hora_fin} h`}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--muted)]">
+                    No se detectaron comisiones en el programa.
+                  </p>
+                )}
+
+                <Button
+                  className="w-full"
+                  onClick={handleGenerateSchedule}
+                  disabled={loading || comisionNumero == null}
+                  aria-busy={loading}
+                >
+                  <CalendarRange className="h-4 w-4" aria-hidden="true" />
+                  Generar planner y calendario
+                </Button>
+              </div>
+            )}
+
+            {programSuccess && (
+              <p
+                role="status"
+                className="mt-3 text-sm font-medium text-[var(--accent)]"
+              >
+                {programSuccess}
+              </p>
+            )}
+          </CardSection>
+        )}
 
         {/* AI extraction from PDF */}
         {programFiles.length > 0 && (

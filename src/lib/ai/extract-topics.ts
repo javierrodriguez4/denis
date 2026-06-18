@@ -1,12 +1,13 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { getOpenAIClient, OPENAI_MODEL } from "@/lib/ai/openai-client";
 import type { SuggestedTopic } from "@/lib/supabase/types";
 import { extractTopicsHeuristic } from "@/lib/pdf/extract-text";
 
 const SYSTEM_PROMPT = `Eres un asistente que extrae temas de programas curriculares de medicina.
-Analiza el texto y devuelve SOLO un JSON array de objetos con "title" (string) y "sort_order" (number empezando en 0).
+Analiza el texto y devuelve SOLO un objeto JSON con la forma { "topics": [{ "title": string, "sort_order": number }] }, sin markdown.
+El "sort_order" empieza en 0.
 Incluye unidades, temas, capítulos o bloques de contenido relevantes para estudiar.
 No incluyas metadatos administrativos, bibliografía ni horarios.
-Máximo 80 temas. Responde únicamente con el JSON, sin markdown.`;
+Máximo 80 temas.`;
 
 export type ExtractionMethod = "ai" | "heuristic";
 
@@ -18,21 +19,21 @@ export interface ExtractTopicsResult {
 export async function extractTopicsWithAI(
   pdfText: string,
 ): Promise<ExtractTopicsResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const client = getOpenAIClient();
 
-  if (!apiKey) {
+  if (!client) {
     return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
   }
 
   const truncated = pdfText.slice(0, 120000);
-  const client = new Anthropic({ apiKey });
 
   try {
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+    const completion = await client.chat.completions.create({
+      model: OPENAI_MODEL,
+      temperature: 0,
+      response_format: { type: "json_object" },
       messages: [
+        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
           content: `Extrae los temas de estudio de este programa curricular:\n\n${truncated}`,
@@ -40,17 +41,20 @@ export async function extractTopicsWithAI(
       ],
     });
 
-    const block = message.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") {
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
       return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
     }
 
-    const parsed = JSON.parse(block.text.trim()) as unknown;
-    if (!Array.isArray(parsed)) {
+    const parsed = JSON.parse(content) as unknown;
+    const rawTopics = Array.isArray(parsed)
+      ? parsed
+      : (parsed as { topics?: unknown })?.topics;
+    if (!Array.isArray(rawTopics)) {
       return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
     }
 
-    const valid = parsed.filter(
+    const valid = rawTopics.filter(
       (t): t is { title: string; sort_order?: number } =>
         t != null &&
         typeof t === "object" &&
