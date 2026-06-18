@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       <button
         type="button"
         onClick={toggle}
-        className="fixed bottom-20 right-4 z-50 hidden rounded-full border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg md:bottom-6 md:flex"
+        className="fixed bottom-20 right-4 z-50 flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-3 shadow-lg md:bottom-6"
         aria-label="Cambiar tema"
       >
         {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

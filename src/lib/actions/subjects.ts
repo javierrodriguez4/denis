@@ -65,15 +65,22 @@ export async function updateSubject(id: string, name: string, color: string) {
 export async function deleteSubject(id: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
   const supabase = createServerClient();
-  const { data: files } = await supabase
+  const { data: files, error: filesError } = await supabase
     .from("subject_files")
     .select("storage_path")
     .eq("subject_id", id);
 
+  // Abort before the cascade delete if we cannot list the files, otherwise the
+  // subject_files rows (and their storage references) would be lost on retry.
+  if (filesError) return { error: filesError.message };
+
   if (files?.length) {
-    await supabase.storage
+    const { error: removeError } = await supabase.storage
       .from("subject-files")
       .remove(files.map((f) => f.storage_path));
+    // Storage removal failed; do not delete the subject or the cascade would
+    // orphan these storage objects with no DB reference to locate them.
+    if (removeError) return { error: removeError.message };
   }
 
   const { error } = await supabase.from("subjects").delete().eq("id", id);

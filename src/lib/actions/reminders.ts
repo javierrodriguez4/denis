@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { addDays, format } from "date-fns";
 import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { ReminderSettings } from "@/lib/supabase/types";
 
@@ -23,11 +24,14 @@ export async function updateReminderSettings(input: {
   const supabase = createServerClient();
   const { error } = await supabase
     .from("reminder_settings")
-    .update({
-      days_before: input.days_before.sort((a, b) => b - a),
-      notifications_enabled: input.notifications_enabled,
-    })
-    .eq("id", 1);
+    .upsert(
+      {
+        id: 1,
+        days_before: input.days_before.sort((a, b) => b - a),
+        notifications_enabled: input.notifications_enabled,
+      },
+      { onConflict: "id" },
+    );
   if (error) return { error: error.message };
   revalidatePath("/ajustes");
   return { success: true };
@@ -42,10 +46,8 @@ export async function getEventsNeedingReminder(): Promise<
 
   const supabase = createServerClient();
   const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
-  const horizon = new Date(today);
-  horizon.setDate(horizon.getDate() + 14);
-  const horizonStr = horizon.toISOString().slice(0, 10);
+  const todayStr = format(today, "yyyy-MM-dd");
+  const horizonStr = format(addDays(today, 14), "yyyy-MM-dd");
 
   const { data: events } = await supabase
     .from("calendar_events")

@@ -27,11 +27,14 @@ export async function createTopic(
 
   let order = sortOrder;
   if (order === undefined) {
-    const { count } = await supabase
+    const { data: maxRow } = await supabase
       .from("topics")
-      .select("*", { count: "exact", head: true })
-      .eq("subject_id", subjectId);
-    order = count ?? 0;
+      .select("sort_order")
+      .eq("subject_id", subjectId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    order = (maxRow?.sort_order ?? -1) + 1;
   }
 
   const { data, error } = await supabase

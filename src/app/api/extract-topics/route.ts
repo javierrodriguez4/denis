@@ -44,17 +44,17 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await blob.arrayBuffer());
     const text = await extractTextFromPdfBuffer(buffer);
-    const topics = await extractTopicsWithAI(text);
-    const usedAI = Boolean(process.env.ANTHROPIC_API_KEY);
+    const { topics, method } = await extractTopicsWithAI(text);
+    const usedAI = method === "ai";
 
     return NextResponse.json({
       topics,
       sourceFileId: file.id,
       sourceFileName: file.name,
-      extractionMethod: usedAI ? "ai" : "heuristic",
+      extractionMethod: method,
       message: usedAI
         ? "Temas sugeridos con IA. Revísalos antes de confirmar."
-        : "Temas sugeridos automáticamente (sin clave de IA). Revísalos antes de confirmar.",
+        : "Temas sugeridos automáticamente. Revísalos antes de confirmar.",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error al procesar PDF";

@@ -65,12 +65,19 @@ export async function deleteSubjectFile(id: string, subjectId: string) {
     .eq("id", id)
     .single();
 
-  if (file) {
-    await supabase.storage.from("subject-files").remove([file.storage_path]);
-  }
-
   const { error } = await supabase.from("subject_files").delete().eq("id", id);
   if (error) return { error: error.message };
+
+  if (file?.storage_path) {
+    const { error: storageError } = await supabase.storage
+      .from("subject-files")
+      .remove([file.storage_path]);
+    if (storageError) {
+      // Row is already gone; an orphaned object is harmless. Log for cleanup.
+      console.error("Failed to remove storage object", file.storage_path, storageError);
+    }
+  }
+
   revalidatePath(`/materias/${subjectId}`);
   return { success: true };
 }

@@ -8,13 +8,20 @@ Incluye unidades, temas, capítulos o bloques de contenido relevantes para estud
 No incluyas metadatos administrativos, bibliografía ni horarios.
 Máximo 80 temas. Responde únicamente con el JSON, sin markdown.`;
 
+export type ExtractionMethod = "ai" | "heuristic";
+
+export interface ExtractTopicsResult {
+  topics: SuggestedTopic[];
+  method: ExtractionMethod;
+}
+
 export async function extractTopicsWithAI(
   pdfText: string,
-): Promise<SuggestedTopic[]> {
+): Promise<ExtractTopicsResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    return extractTopicsHeuristic(pdfText);
+    return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
   }
 
   const truncated = pdfText.slice(0, 120000);
@@ -22,7 +29,7 @@ export async function extractTopicsWithAI(
 
   try {
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       messages: [
@@ -35,19 +42,32 @@ export async function extractTopicsWithAI(
 
     const block = message.content.find((b) => b.type === "text");
     if (!block || block.type !== "text") {
-      return extractTopicsHeuristic(pdfText);
+      return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
     }
 
-    const parsed = JSON.parse(block.text.trim()) as SuggestedTopic[];
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      return extractTopicsHeuristic(pdfText);
+    const parsed = JSON.parse(block.text.trim()) as unknown;
+    if (!Array.isArray(parsed)) {
+      return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
     }
 
-    return parsed.map((t, i) => ({
-      title: String(t.title).trim(),
-      sort_order: t.sort_order ?? i,
+    const valid = parsed.filter(
+      (t): t is { title: string; sort_order?: number } =>
+        t != null &&
+        typeof t === "object" &&
+        typeof (t as { title?: unknown }).title === "string" &&
+        (t as { title: string }).title.trim().length > 0,
+    );
+    if (valid.length === 0) {
+      return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
+    }
+
+    const topics = valid.map((t, i) => ({
+      title: t.title.trim(),
+      sort_order: typeof t.sort_order === "number" ? t.sort_order : i,
     }));
-  } catch {
-    return extractTopicsHeuristic(pdfText);
+    return { topics, method: "ai" };
+  } catch (err) {
+    console.error("AI topic extraction failed; falling back to heuristic:", err);
+    return { topics: extractTopicsHeuristic(pdfText), method: "heuristic" };
   }
 }

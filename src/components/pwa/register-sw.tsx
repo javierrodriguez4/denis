@@ -20,8 +20,10 @@ export async function requestNotificationPermission(): Promise<boolean> {
   return result === "granted";
 }
 
-export function showLocalNotification(title: string, body: string) {
+export function showLocalNotification(title: string, body: string): boolean {
   if (Notification.permission === "granted") {
     new Notification(title, { body, icon: "/icons/icon-192.png" });
+    return true;
   }
+  return false;
 }

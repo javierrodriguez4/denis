@@ -15,11 +15,11 @@ export function NotificationScheduler() {
 
         for (const e of events) {
           if (notified.includes(e.id)) continue;
-          showLocalNotification(
+          const shown = showLocalNotification(
             "Denis — Recordatorio",
-            `${e.title} en ${e.daysUntil === 0 ? "hoy" : `${e.daysUntil} días`}`,
+            `${e.title} ${e.daysUntil === 0 ? "es hoy" : `en ${e.daysUntil} día${e.daysUntil > 1 ? "s" : ""}`}`,
           );
-          notified.push(e.id);
+          if (shown) notified.push(e.id);
         }
 
         localStorage.setItem(key, JSON.stringify(notified));

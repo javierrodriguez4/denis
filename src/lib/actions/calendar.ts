@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { CalendarEvent, EventType } from "@/lib/supabase/types";
+import { toISODate } from "@/lib/dates";
 
 export async function getCalendarEvents(
   from?: string,
@@ -26,7 +27,7 @@ export async function getCalendarEvents(
 export async function getUpcomingEvents(limit = 5): Promise<CalendarEvent[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = createServerClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toISODate(new Date());
   const { data, error } = await supabase
     .from("calendar_events")
     .select("*, subjects(name, color)")
@@ -42,7 +43,7 @@ export async function getNextExamForSubject(
 ): Promise<CalendarEvent | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = createServerClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toISODate(new Date());
   const { data } = await supabase
     .from("calendar_events")
     .select("*")
