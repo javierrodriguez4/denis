@@ -36,7 +36,7 @@ export async function getTopicsBySubjectWithProgress(
 
 export async function updateTopicProgress(
   topicId: string,
-  field: "read_done" | "studied_done" | "reviewed_done",
+  field: "read_done" | "studied_done" | "reviewed_done" | "choice_done",
   value: boolean,
 ) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };

@@ -23,6 +23,32 @@ export async function getPlannerEntries(
   return data ?? [];
 }
 
+export interface SubjectWithTopics {
+  id: string;
+  name: string;
+  color: string;
+  topics: { id: string; title: string }[];
+}
+
+/** Subjects with their topics, for the planner "add topic" picker. */
+export async function getSubjectsWithTopics(): Promise<SubjectWithTopics[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("subjects")
+    .select("id, name, color, topics(id, title, sort_order)")
+    .order("name");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    color: s.color,
+    topics: [...(s.topics ?? [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((t) => ({ id: t.id, title: t.title })),
+  }));
+}
+
 export async function getTodayEntries(): Promise<PlannerEntry[]> {
   const today = todayISO();
   return getPlannerEntries(today, today);
@@ -43,6 +69,25 @@ export async function addPlannerEntry(topicId: string, plannedDate: string) {
   revalidatePath("/planner");
   revalidatePath("/");
   return { data };
+}
+
+export async function movePlannerEntry(id: string, newDate: string) {
+  if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
+  const supabase = await createServerClient();
+  const { error } = await supabase
+    .from("planner_entries")
+    .update({ planned_date: newDate })
+    .eq("id", id);
+  if (error) {
+    // unique(topic_id, planned_date) — surface a friendly message on conflict.
+    if (error.code === "23505") {
+      return { error: "Ese tema ya está planificado para ese día." };
+    }
+    return { error: error.message };
+  }
+  revalidatePath("/planner");
+  revalidatePath("/");
+  return { success: true };
 }
 
 export async function removePlannerEntry(id: string) {

@@ -5,7 +5,8 @@ export type EventType =
   | "presentacion"
   | "otro"
   | "seminario"
-  | "recuperatorio";
+  | "recuperatorio"
+  | "inscripcion";
 
 export interface Subject {
   id: string;
@@ -37,6 +38,7 @@ export interface Topic {
   read_done: boolean;
   studied_done: boolean;
   reviewed_done: boolean;
+  choice_done: boolean;
   created_at: string;
   subjects?: Pick<Subject, "name" | "color">;
 }

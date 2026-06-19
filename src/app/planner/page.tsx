@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { SetupBanner } from "@/components/setup-banner";
 import { WeeklyPlanner } from "@/components/planner/weekly-planner";
-import { getPlannerEntries } from "@/lib/actions/planner";
+import { getPlannerEntries, getSubjectsWithTopics } from "@/lib/actions/planner";
 import { getCalendarEvents } from "@/lib/actions/calendar";
 import { getWeekStart, getWeekEnd, toISODate, formatDate, nowBA } from "@/lib/dates";
 import { addWeeks } from "date-fns";
@@ -14,9 +14,10 @@ export default async function PlannerPage() {
   const from = toISODate(start);
   const to = toISODate(end);
 
-  const [entries, allEvents] = await Promise.all([
+  const [entries, allEvents, subjectsWithTopics] = await Promise.all([
     getPlannerEntries(from, to),
     getCalendarEvents(from, to),
+    getSubjectsWithTopics(),
   ]);
 
   const presentations = allEvents.filter((e) => e.event_type === "presentacion");
@@ -37,7 +38,11 @@ export default async function PlannerPage() {
       </div>
 
       <SetupBanner />
-      <WeeklyPlanner entries={entries} presentations={presentations} />
+      <WeeklyPlanner
+        entries={entries}
+        presentations={presentations}
+        subjects={subjectsWithTopics}
+      />
     </div>
   );
 }

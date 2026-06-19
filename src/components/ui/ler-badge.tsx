@@ -3,15 +3,15 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** L·E·R study stages, in order. */
-export const LER_STAGES = ["leído", "estudiado", "repasado"] as const;
-export type LerStage = 0 | 1 | 2;
+/** L·E·R·C study stages, in order. */
+export const LER_STAGES = ["leído", "estudiado", "repasado", "choice"] as const;
+export type LerStage = 0 | 1 | 2 | 3;
 
-const LETTERS = ["L", "E", "R"] as const;
+const LETTERS = ["L", "E", "R", "C"] as const;
 
 interface LerBadgeProps {
   /**
-   * Number of completed stages (0..3). Segments below this index render as "on".
+   * Number of completed stages (0..segments). Segments below this index render as "on".
    */
   value: number;
   /**
@@ -21,12 +21,23 @@ interface LerBadgeProps {
   onChange?: (value: number) => void;
   /** Visual size of each segment. */
   size?: "sm" | "md";
+  /** How many sequential stages to render (3 = L·E·R, 4 = L·E·R·C). Defaults to 3. */
+  segments?: 3 | 4;
   className?: string;
 }
 
-export function LerBadge({ value, onChange, size = "md", className }: LerBadgeProps) {
+export function LerBadge({
+  value,
+  onChange,
+  size = "md",
+  segments = 3,
+  className,
+}: LerBadgeProps) {
   const interactive = typeof onChange === "function";
-  const completed = Math.min(3, Math.max(0, Math.round(value)));
+  const completed = Math.min(segments, Math.max(0, Math.round(value)));
+  const letters = LETTERS.slice(0, segments);
+
+  const stageNames = LER_STAGES.slice(0, segments).join(", ");
 
   const dims = size === "sm" ? "h-6 w-6 text-[10px]" : "h-[26px] w-[26px] text-[10px]";
   const iconSize = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";
@@ -35,11 +46,9 @@ export function LerBadge({ value, onChange, size = "md", className }: LerBadgePr
     <div
       className={cn("flex flex-none gap-1.5", className)}
       role={interactive ? "group" : undefined}
-      aria-label={
-        interactive ? "Progreso de estudio (leído, estudiado, repasado)" : undefined
-      }
+      aria-label={interactive ? `Progreso de estudio (${stageNames})` : undefined}
     >
-      {LETTERS.map((letter, index) => {
+      {letters.map((letter, index) => {
         const on = index < completed;
         const stage = LER_STAGES[index];
         const segmentClasses = cn(

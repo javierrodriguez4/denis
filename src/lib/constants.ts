@@ -7,6 +7,7 @@ export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   otro: "Otro",
   seminario: "Seminario",
   recuperatorio: "Recuperatorio",
+  inscripcion: "Inscripción",
 };
 
 export const EVENT_TYPE_COLORS: Record<EventType, string> = {
@@ -16,6 +17,7 @@ export const EVENT_TYPE_COLORS: Record<EventType, string> = {
   otro: "#6b7280",
   seminario: "#0d9488",
   recuperatorio: "#b45309",
+  inscripcion: "#7c3aed",
 };
 
 export const FILE_TYPE_LABELS: Record<FileType, string> = {

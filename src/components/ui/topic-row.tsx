@@ -6,10 +6,12 @@ interface TopicRowProps {
   subject: string;
   /** Topic title (e.g. "Sistema nervioso central"). */
   title: string;
-  /** Completed L·E·R stages (0..3). */
-  ler: number;
+  /** Completed L·E·R stages (0..3). Only used when the badge is shown. */
+  ler?: number;
   /** Interactive L·E·R handler; omit for read-only. */
   onLerChange?: (value: number) => void;
+  /** Whether to render the L·E·R progress badge. Defaults to true. */
+  showLer?: boolean;
   /** Opacity of the subject tick (0..1), used to fade lower-priority rows. */
   tickOpacity?: number;
   className?: string;
@@ -17,13 +19,14 @@ interface TopicRowProps {
 
 /**
  * TopicRow — a single study topic line: a colored subject tick, the subject
- * eyebrow + topic title, and a L·E·R progress badge on the right.
+ * eyebrow + topic title, and an optional L·E·R progress badge on the right.
  */
 export function TopicRow({
   subject,
   title,
-  ler,
+  ler = 0,
   onLerChange,
+  showLer = true,
   tickOpacity = 0.85,
   className,
 }: TopicRowProps) {
@@ -47,7 +50,7 @@ export function TopicRow({
           {title}
         </div>
       </div>
-      <LerBadge value={ler} onChange={onLerChange} />
+      {showLer && <LerBadge value={ler} onChange={onLerChange} />}
     </div>
   );
 }

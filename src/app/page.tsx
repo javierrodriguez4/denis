@@ -16,23 +16,6 @@ import { EVENT_TYPE_LABELS } from "@/lib/constants";
 import type { EventType } from "@/lib/supabase/types";
 import Link from "next/link";
 
-/** Compute LER stage count (0..3) from topic flags. */
-function lerValue(t: {
-  read_done: boolean;
-  studied_done: boolean;
-  reviewed_done: boolean;
-}): number {
-  if (t.reviewed_done) return 3;
-  if (t.studied_done) return 2;
-  if (t.read_done) return 1;
-  return 0;
-}
-
-/** Tick opacity decreases with remaining stages. */
-function tickOpacity(ler: number): number {
-  return [0.25, 0.5, 0.7, 0.85][ler] ?? 0.85;
-}
-
 /** Format date as eyebrow: "Miércoles 18 · junio" */
 function formatEyebrow(date: Date): string {
   const weekday = format(date, "EEEE", { locale: es });
@@ -201,14 +184,12 @@ export default async function HomePage() {
                 {todayEntries.map((entry) => {
                   const topic = entry.topics;
                   if (!topic) return null;
-                  const ler = lerValue(topic);
                   return (
                     <TopicRow
                       key={entry.id}
                       subject={topic.subjects?.name ?? ""}
                       title={topic.title}
-                      ler={ler}
-                      tickOpacity={tickOpacity(ler)}
+                      showLer={false}
                     />
                   );
                 })}

@@ -11,16 +11,28 @@ import type { TopicWithSubject } from "@/lib/actions/checklist";
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Derive the LER numeric value (0‒3) from the three boolean fields. */
+/** Derive the LER·C numeric value (0‒4) from the four boolean fields. */
 function lerValue(topic: TopicWithSubject): number {
-  return (topic.read_done ? 1 : 0) + (topic.studied_done ? 1 : 0) + (topic.reviewed_done ? 1 : 0);
+  return (
+    (topic.read_done ? 1 : 0) +
+    (topic.studied_done ? 1 : 0) +
+    (topic.reviewed_done ? 1 : 0) +
+    (topic.choice_done ? 1 : 0)
+  );
+}
+
+/** A topic is fully done only when all four stages are complete. */
+function isFullyDone(topic: TopicWithSubject): boolean {
+  return (
+    topic.read_done && topic.studied_done && topic.reviewed_done && topic.choice_done
+  );
 }
 
 /**
- * Translate a LER count (0‒3) back to the three individual boolean fields and
+ * Translate a LER·C count (0‒4) back to the four individual boolean fields and
  * call updateTopicProgress for each field that actually changed.
  *
- * LER model: stages are sequential — completing stage N implies stages 0..N-1
+ * LER·C model: stages are sequential — completing stage N implies stages 0..N-1
  * are also complete.  The badge reports a new total count.
  */
 async function applyLerChange(
@@ -32,6 +44,7 @@ async function applyLerChange(
     read_done: next >= 1,
     studied_done: next >= 2,
     reviewed_done: next >= 3,
+    choice_done: next >= 4,
   } as const;
 
   const calls: Promise<unknown>[] = [];
@@ -42,6 +55,8 @@ async function applyLerChange(
     calls.push(updateTopicProgress(topicId, "studied_done", desired.studied_done));
   if (prev.reviewed_done !== desired.reviewed_done)
     calls.push(updateTopicProgress(topicId, "reviewed_done", desired.reviewed_done));
+  if (prev.choice_done !== desired.choice_done)
+    calls.push(updateTopicProgress(topicId, "choice_done", desired.choice_done));
 
   await Promise.all(calls);
 }
@@ -73,7 +88,7 @@ interface SubjectGroupProps {
 function SubjectGroup({ subjectId: _subjectId, topics, onToggle }: SubjectGroupProps) {
   const subject = topics[0].subjects;
 
-  const done = topics.filter((t) => t.read_done && t.studied_done && t.reviewed_done).length;
+  const done = topics.filter(isFullyDone).length;
   const pct = topics.length > 0 ? Math.round((done / topics.length) * 100) : 0;
 
   return (
@@ -141,7 +156,7 @@ function TopicItem({ topic, onToggle }: TopicItemProps) {
         aria-hidden="true"
         className="w-1.5 flex-none self-stretch rounded-full bg-[var(--accent)]"
         style={{
-          opacity: ler === 3 ? 1 : ler >= 1 ? 0.6 : 0.25,
+          opacity: ler === 4 ? 1 : ler >= 1 ? 0.6 : 0.25,
         }}
       />
 
@@ -155,6 +170,7 @@ function TopicItem({ topic, onToggle }: TopicItemProps) {
         value={ler}
         onChange={(next) => onToggle(topic, next)}
         size="sm"
+        segments={4}
       />
     </li>
   );
