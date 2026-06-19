@@ -4,11 +4,11 @@ import { SetupBanner } from "@/components/setup-banner";
 import { WeeklyPlanner } from "@/components/planner/weekly-planner";
 import { getPlannerEntries } from "@/lib/actions/planner";
 import { getCalendarEvents } from "@/lib/actions/calendar";
-import { getWeekStart, getWeekEnd, toISODate, formatDate } from "@/lib/dates";
+import { getWeekStart, getWeekEnd, toISODate, formatDate, nowBA } from "@/lib/dates";
 import { addWeeks } from "date-fns";
 
 export default async function PlannerPage() {
-  const today = new Date();
+  const today = nowBA();
   const start = getWeekStart(today);
   const end = addWeeks(getWeekEnd(today), 2);
   const from = toISODate(start);

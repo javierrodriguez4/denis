@@ -9,7 +9,7 @@ import { SubjectCard } from "@/components/subjects/subject-card";
 import { getSubjects } from "@/lib/actions/subjects";
 import { getUpcomingEvents } from "@/lib/actions/calendar";
 import { getTodayEntries, getSubjectProgress } from "@/lib/actions/planner";
-import { format, parseISO } from "@/lib/dates";
+import { format, parseISO, nowBA } from "@/lib/dates";
 import { differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { EVENT_TYPE_LABELS } from "@/lib/constants";
@@ -44,7 +44,7 @@ function formatEyebrow(date: Date): string {
 
 /** Days until an ISO date string. */
 function daysUntil(isoDate: string): number {
-  return differenceInCalendarDays(parseISO(isoDate), new Date());
+  return differenceInCalendarDays(parseISO(isoDate), nowBA());
 }
 
 /** Human-readable countdown. */
@@ -75,7 +75,7 @@ export default async function HomePage() {
     })),
   );
 
-  const today = new Date();
+  const today = nowBA();
   const eyebrow = formatEyebrow(today);
 
   // Today focus progress

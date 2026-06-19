@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { addDays, format } from "date-fns";
+import { nowBA } from "@/lib/dates";
 import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { ReminderSettings } from "@/lib/supabase/types";
 
@@ -45,7 +46,7 @@ export async function getEventsNeedingReminder(): Promise<
   if (!settings?.notifications_enabled) return [];
 
   const supabase = createServerClient();
-  const today = new Date();
+  const today = nowBA();
   const todayStr = format(today, "yyyy-MM-dd");
   const horizonStr = format(addDays(today, 14), "yyyy-MM-dd");
 

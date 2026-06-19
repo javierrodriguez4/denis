@@ -4,6 +4,7 @@ import { getCalendarEvents } from "@/lib/actions/calendar";
 import { getStudyLogs } from "@/lib/actions/study-logs";
 import { getSubjects } from "@/lib/actions/subjects";
 import { format } from "date-fns";
+import { nowBA } from "@/lib/dates";
 import { es } from "date-fns/locale";
 
 export default async function CalendarioPage({
@@ -12,7 +13,7 @@ export default async function CalendarioPage({
   searchParams: Promise<{ mes?: string }>;
 }) {
   const { mes } = await searchParams;
-  const now = new Date();
+  const now = nowBA();
   const month = mes ?? format(now, "yyyy-MM");
   const [year, monthNum] = month.split("-").map(Number);
   const from = `${month}-01`;

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { distributeDates, toISODate } from "@/lib/dates";
+import { distributeDates, toISODate, nowBA, todayISO } from "@/lib/dates";
 import type { PlannerEntry } from "@/lib/supabase/types";
 import { parseISO } from "date-fns";
 
@@ -23,7 +23,7 @@ export async function getPlannerEntries(
 }
 
 export async function getTodayEntries(): Promise<PlannerEntry[]> {
-  const today = toISODate(new Date());
+  const today = todayISO();
   return getPlannerEntries(today, today);
 }
 
@@ -71,7 +71,7 @@ export async function distributeTopicsToPlanner(
   if (topicsError) return { error: topicsError.message };
   if (!topics?.length) return { error: "No hay temas en esta materia" };
 
-  const start = startDate ? parseISO(startDate) : new Date();
+  const start = startDate ? parseISO(startDate) : nowBA();
   const end = parseISO(endDate);
   if (end < start) return { error: "La fecha del examen debe ser futura" };
 
