@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import { distributeDates, toISODate, nowBA, todayISO } from "@/lib/dates";
 import type { PlannerEntry } from "@/lib/supabase/types";
 import { parseISO } from "date-fns";
@@ -11,7 +12,7 @@ export async function getPlannerEntries(
   to: string,
 ): Promise<PlannerEntry[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("planner_entries")
     .select("*, topics(*, subjects(name, color))")
@@ -29,7 +30,7 @@ export async function getTodayEntries(): Promise<PlannerEntry[]> {
 
 export async function addPlannerEntry(topicId: string, plannedDate: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("planner_entries")
     .upsert(
@@ -46,7 +47,7 @@ export async function addPlannerEntry(topicId: string, plannedDate: string) {
 
 export async function removePlannerEntry(id: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase.from("planner_entries").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/planner");
@@ -60,7 +61,7 @@ export async function distributeTopicsToPlanner(
   startDate?: string,
 ) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
 
   const { data: topics, error: topicsError } = await supabase
     .from("topics")
@@ -93,7 +94,7 @@ export async function distributeTopicsToPlanner(
 
 export async function getSubjectProgress(subjectId: string) {
   if (!isSupabaseConfigured()) return { total: 0, read: 0, studied: 0, reviewed: 0 };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: topics } = await supabase
     .from("topics")
     .select("read_done, studied_done, reviewed_done")

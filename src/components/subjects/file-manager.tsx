@@ -36,9 +36,20 @@ export function FileManager({
     setError("");
 
     try {
-      const ext = file.name.split(".").pop() ?? "bin";
-      const storagePath = `${subjectId}/${crypto.randomUUID()}.${ext}`;
       const supabase = createBrowserClient();
+
+      // Storage is partitioned per user: the first path segment must be the
+      // user id (the storage RLS policy enforces this).
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Tu sesión expiró. Vuelve a iniciar sesión.");
+        return;
+      }
+
+      const ext = file.name.split(".").pop() ?? "bin";
+      const storagePath = `${user.id}/${subjectId}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("subject-files")

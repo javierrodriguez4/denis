@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import type { Topic } from "@/lib/supabase/types";
 
 export type TopicWithSubject = Topic & {
@@ -10,7 +11,7 @@ export type TopicWithSubject = Topic & {
 
 export async function getAllTopicsWithProgress(): Promise<TopicWithSubject[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("topics")
     .select("*, subjects(name, color)")
@@ -23,7 +24,7 @@ export async function getTopicsBySubjectWithProgress(
   subjectId: string,
 ): Promise<Topic[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("topics")
     .select("*")
@@ -39,7 +40,7 @@ export async function updateTopicProgress(
   value: boolean,
 ) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: topic } = await supabase
     .from("topics")
     .select("subject_id")

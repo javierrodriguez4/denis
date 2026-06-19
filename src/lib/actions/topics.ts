@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import type { Topic } from "@/lib/supabase/types";
 
 export async function getTopicsBySubject(subjectId: string): Promise<Topic[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("topics")
     .select("*")
@@ -23,7 +24,7 @@ export async function createTopic(
   sourceFileId?: string,
 ) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
 
   let order = sortOrder;
   if (order === undefined) {
@@ -62,7 +63,7 @@ export async function createTopicsBatch(
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
   if (!topics.length) return { error: "No hay temas para guardar" };
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const rows = topics.map((t) => ({
     subject_id: subjectId,
     title: t.title.trim(),
@@ -79,7 +80,7 @@ export async function createTopicsBatch(
 
 export async function updateTopic(id: string, subjectId: string, title: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase
     .from("topics")
     .update({ title: title.trim() })
@@ -92,7 +93,7 @@ export async function updateTopic(id: string, subjectId: string, title: string) 
 
 export async function deleteTopic(id: string, subjectId: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase.from("topics").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath(`/materias/${subjectId}`);
@@ -102,7 +103,7 @@ export async function deleteTopic(id: string, subjectId: string) {
 
 export async function deleteTopicsBySubject(subjectId: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase
     .from("topics")
     .delete()

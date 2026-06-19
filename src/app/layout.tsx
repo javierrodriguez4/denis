@@ -2,9 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { AccountChip } from "@/components/account-chip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServiceWorkerRegister } from "@/components/pwa/register-sw";
 import { NotificationScheduler } from "@/components/pwa/notification-scheduler";
+import { createServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 const inter = Inter({
   variable: "--font-body",
@@ -37,11 +40,20 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let isAdmin = false;
+  if (isSupabaseConfigured()) {
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    isAdmin = user?.app_metadata?.role === "admin";
+  }
+
   return (
     <html
       lang="es"
@@ -50,7 +62,9 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[var(--bg)] antialiased">
         <ThemeProvider>
-          <AppShell>{children}</AppShell>
+          <AppShell accountSlot={<AccountChip />} isAdmin={isAdmin}>
+            {children}
+          </AppShell>
           <ServiceWorkerRegister />
           <NotificationScheduler />
         </ThemeProvider>

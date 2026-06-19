@@ -9,6 +9,7 @@ export type EventType =
 
 export interface Subject {
   id: string;
+  user_id: string;
   name: string;
   color: string;
   created_at: string;
@@ -16,6 +17,7 @@ export interface Subject {
 
 export interface SubjectFile {
   id: string;
+  user_id: string;
   subject_id: string;
   name: string;
   file_type: FileType;
@@ -27,6 +29,7 @@ export interface SubjectFile {
 
 export interface Topic {
   id: string;
+  user_id: string;
   subject_id: string;
   title: string;
   sort_order: number;
@@ -40,6 +43,7 @@ export interface Topic {
 
 export interface CalendarEvent {
   id: string;
+  user_id: string;
   subject_id: string | null;
   title: string;
   event_type: EventType;
@@ -52,6 +56,7 @@ export interface CalendarEvent {
 
 export interface PlannerEntry {
   id: string;
+  user_id: string;
   topic_id: string;
   planned_date: string;
   created_at: string;
@@ -60,6 +65,7 @@ export interface PlannerEntry {
 
 export interface StudyLog {
   id: string;
+  user_id: string;
   log_date: string;
   hours: number;
   notes: string | null;
@@ -68,6 +74,7 @@ export interface StudyLog {
 
 export interface ReminderSettings {
   id: number;
+  user_id: string;
   days_before: number[];
   notifications_enabled: boolean;
 }

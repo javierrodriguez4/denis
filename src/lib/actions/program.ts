@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import { extractTextFromPdfBuffer } from "@/lib/pdf/extract-text";
 import { extractProgram } from "@/lib/ai/extract-program";
 import { generateSchedule } from "@/lib/ai/schedule-generator";
@@ -25,7 +26,7 @@ export async function processProgramFile(
 ): Promise<ProcessProgramResult | ActionError> {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: file, error: fileError } = await supabase
     .from("subject_files")
     .select("*")
@@ -81,7 +82,7 @@ export async function generateScheduleFromProgram(
 ): Promise<{ topics: number; events: number; plannerEntries: number } | ActionError> {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const schedule = generateSchedule(program, comisionNumero);
 
   if (schedule.topics.length === 0) {

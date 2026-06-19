@@ -29,7 +29,12 @@ export default function AjustesPage() {
   async function save(days: number[], enabled: boolean) {
     setLoading(true);
     await updateReminderSettings({ days_before: days, notifications_enabled: enabled });
-    setSettings({ id: 1, days_before: days, notifications_enabled: enabled });
+    setSettings((prev) => ({
+      id: prev?.id ?? 1,
+      user_id: prev?.user_id ?? "",
+      days_before: days,
+      notifications_enabled: enabled,
+    }));
     setLoading(false);
   }
 

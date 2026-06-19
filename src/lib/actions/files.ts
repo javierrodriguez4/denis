@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import type { FileType, SubjectFile } from "@/lib/supabase/types";
 
 export async function getSubjectFiles(subjectId: string): Promise<SubjectFile[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("subject_files")
     .select("*")
@@ -18,7 +19,7 @@ export async function getSubjectFiles(subjectId: string): Promise<SubjectFile[]>
 
 export async function getFileById(id: string): Promise<SubjectFile | null> {
   if (!isSupabaseConfigured()) return null;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data } = await supabase
     .from("subject_files")
     .select("*")
@@ -37,7 +38,7 @@ export async function registerSubjectFile(input: {
 }) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("subject_files")
     .insert({
@@ -58,7 +59,7 @@ export async function registerSubjectFile(input: {
 
 export async function deleteSubjectFile(id: string, subjectId: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data: file } = await supabase
     .from("subject_files")
     .select("storage_path")
@@ -84,7 +85,7 @@ export async function deleteSubjectFile(id: string, subjectId: string) {
 
 export async function getFileSignedUrl(storagePath: string) {
   if (!isSupabaseConfigured()) return null;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data } = await supabase.storage
     .from("subject-files")
     .createSignedUrl(storagePath, 3600);

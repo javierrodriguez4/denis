@@ -3,18 +3,26 @@ import { cn } from "@/lib/utils";
 interface UserChipProps {
   /** Display name (e.g. "Javi"). */
   name: string;
-  /** Secondary line (e.g. "Medicina · 3.º año"). */
+  /** Secondary line (e.g. an email or role). */
   subtitle?: string;
   /** Avatar initial override; defaults to the first letter of `name`. */
   initial?: string;
   className?: string;
+  /** Optional trailing control (e.g. a logout button). */
+  trailing?: React.ReactNode;
 }
 
 /**
- * UserChip — avatar initial + name + subtitle. Placeholder-safe: it renders
- * purely from props and has no auth dependency yet.
+ * UserChip — avatar initial + name + subtitle, with an optional trailing
+ * control slot (used for the logout button).
  */
-export function UserChip({ name, subtitle, initial, className }: UserChipProps) {
+export function UserChip({
+  name,
+  subtitle,
+  initial,
+  className,
+  trailing,
+}: UserChipProps) {
   const letter = (initial ?? name.charAt(0) ?? "?").toUpperCase();
 
   return (
@@ -25,7 +33,7 @@ export function UserChip({ name, subtitle, initial, className }: UserChipProps) 
       >
         {letter}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <b className="block truncate text-[13.5px] font-semibold leading-tight text-[var(--ink)]">
           {name}
         </b>
@@ -35,6 +43,7 @@ export function UserChip({ name, subtitle, initial, className }: UserChipProps) 
           </span>
         )}
       </div>
+      {trailing}
     </div>
   );
 }

@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import type { StudyLog } from "@/lib/supabase/types";
 
 export async function getStudyLogs(from: string, to: string): Promise<StudyLog[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("study_logs")
     .select("*")
@@ -21,16 +22,25 @@ export async function upsertStudyLog(logDate: string, hours: number, notes?: str
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
   if (hours < 0 || hours > 24) return { error: "Las horas deben estar entre 0 y 24" };
 
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesión no válida" };
+
+  // Unique key is now (user_id, log_date) so each user has their own log per
+  // day. user_id is set explicitly to satisfy the onConflict target.
   const { data, error } = await supabase
     .from("study_logs")
     .upsert(
       {
+        user_id: user.id,
         log_date: logDate,
         hours,
         notes: notes?.trim() || null,
       },
-      { onConflict: "log_date" },
+      { onConflict: "user_id,log_date" },
     )
     .select()
     .single();
@@ -43,7 +53,7 @@ export async function upsertStudyLog(logDate: string, hours: number, notes?: str
 
 export async function deleteStudyLog(logDate: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase.from("study_logs").delete().eq("log_date", logDate);
   if (error) return { error: error.message };
   revalidatePath("/calendario");

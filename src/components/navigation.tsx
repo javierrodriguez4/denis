@@ -10,8 +10,8 @@ import {
   Settings,
   CheckSquare,
 } from "lucide-react";
+import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UserChip } from "@/components/ui/user-chip";
 
 const links = [
   { href: "/", label: "Inicio", icon: Home },
@@ -22,6 +22,8 @@ const links = [
   { href: "/ajustes", label: "Ajustes", icon: Settings },
 ] as const;
 
+const adminLink = { href: "/admin/usuarios", label: "Usuarios", icon: Users } as const;
+
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(href));
 }
@@ -29,10 +31,15 @@ function isActive(pathname: string, href: string) {
 interface NavProps {
   /** Optional theme toggle (or any control) rendered inside the nav. */
   renderToggle?: () => React.ReactNode;
+  /** Whether to show admin-only links. */
+  isAdmin?: boolean;
+  /** Account chip slot (server-rendered: real user + logout). */
+  accountSlot?: React.ReactNode;
 }
 
-export function SideNav({ renderToggle }: NavProps) {
+export function SideNav({ renderToggle, isAdmin, accountSlot }: NavProps) {
   const pathname = usePathname();
+  const navLinks = isAdmin ? [...links, adminLink] : links;
 
   return (
     <aside className="sticky top-0 hidden h-screen w-[248px] flex-none flex-col border-r border-[var(--soft)] bg-[var(--surface)] px-[18px] py-6 md:flex">
@@ -48,7 +55,7 @@ export function SideNav({ renderToggle }: NavProps) {
       </Link>
 
       <nav aria-label="Navegación principal" className="flex flex-col gap-0.5">
-        {links.map(({ href, label, icon: Icon }) => {
+        {navLinks.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
             <Link
@@ -71,9 +78,7 @@ export function SideNav({ renderToggle }: NavProps) {
 
       <div className="mt-auto flex flex-col gap-3 pt-4">
         {renderToggle?.()}
-        <div className="border-t border-[var(--soft)] pt-3">
-          <UserChip name="Javi" subtitle="Medicina · 3.º año" />
-        </div>
+        <div className="border-t border-[var(--soft)] pt-3">{accountSlot}</div>
       </div>
     </aside>
   );

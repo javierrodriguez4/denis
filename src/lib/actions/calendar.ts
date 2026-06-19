@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import type { CalendarEvent, EventType } from "@/lib/supabase/types";
 import { toISODate, todayISO } from "@/lib/dates";
 
@@ -10,7 +11,7 @@ export async function getCalendarEvents(
   to?: string,
 ): Promise<CalendarEvent[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   let query = supabase
     .from("calendar_events")
     .select("*, subjects(name, color)")
@@ -26,7 +27,7 @@ export async function getCalendarEvents(
 
 export async function getUpcomingEvents(limit = 5): Promise<CalendarEvent[]> {
   if (!isSupabaseConfigured()) return [];
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const today = todayISO();
   const { data, error } = await supabase
     .from("calendar_events")
@@ -42,7 +43,7 @@ export async function getNextExamForSubject(
   subjectId: string,
 ): Promise<CalendarEvent | null> {
   if (!isSupabaseConfigured()) return null;
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const today = todayISO();
   const { data } = await supabase
     .from("calendar_events")
@@ -65,7 +66,7 @@ export async function createCalendarEvent(input: {
   notes?: string;
 }) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { data, error } = await supabase
     .from("calendar_events")
     .insert({
@@ -96,7 +97,7 @@ export async function updateCalendarEvent(
   },
 ) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase
     .from("calendar_events")
     .update({
@@ -116,7 +117,7 @@ export async function updateCalendarEvent(
 
 export async function deleteCalendarEvent(id: string) {
   if (!isSupabaseConfigured()) return { error: "Configura Supabase" };
-  const supabase = createServerClient();
+  const supabase = await createServerClient();
   const { error } = await supabase.from("calendar_events").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/calendario");

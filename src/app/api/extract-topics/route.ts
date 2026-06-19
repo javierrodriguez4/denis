@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import { extractTextFromPdfBuffer } from "@/lib/pdf/extract-text";
 import { extractTopicsWithAI } from "@/lib/ai/extract-topics";
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "fileId requerido" }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data: file, error: fileError } = await supabase
       .from("subject_files")
       .select("*")
