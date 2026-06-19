@@ -75,5 +75,11 @@ export async function getEventsNeedingReminder(): Promise<
       );
       return { ...e, daysUntil };
     })
-    .filter((e) => settings.days_before.includes(e.daysUntil));
+    .filter((e) => {
+      // Inscripción events (e.g. registering for finals) are reminded ON the
+      // day itself, never the day(s) before — regardless of the days_before
+      // setting. Compare the date string directly to avoid timezone drift.
+      if (e.event_type === "inscripcion") return e.event_date === todayStr;
+      return settings.days_before.includes(e.daysUntil);
+    });
 }
